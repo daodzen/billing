@@ -1,0 +1,136 @@
+<?php 
+//Блок переменных
+$ver=0.01;
+$koef=1.5;
+echo '<head>';
+echo '<meta http-equiv="Content-type" content="text/html; charset=utf-8" />';
+echo '<html><head><title>Система билллинга Aishat ver: ' . $ver . '</title>';
+echo '</head>';
+
+//Подключение к БД tarif
+require_once 'login.php';
+$db_server = mysql_connect($db_hostname, $db_username, $db_password);
+
+//Настройка кодировки utf8
+mysql_query("SET NAMES 'utf8_general_ci'");
+mysql_query("SET CHARACTER SET 'utf8_general_ci'");
+//Подключение к таблице
+mysql_select_db($db_database, $db_server);
+
+
+//Оболочка
+echo '<body>' . '<p>Система билллинга Aishat ver: ' . $ver . '</p><hr>';
+
+//--------------------------------------------------------------
+//Блок ввода новых данных
+echo '<center><h2>Ввод данных</h2></center>';
+echo '<center><table border=0 width=95%><tr>';
+echo '<td>Номер счета</td><td>Фамилия</td><td>Имя</td><td>Отчество</td><td>Предыдущие показания</td><td>Текущие показания</td><td>Записать в БД</td></tr>';
+echo '<form action="mainer.php" method="post">';
+echo '<td><input type="text" name="HSchn"></td>' . 
+'<td><input type="text" name="HFam"></td>' . 
+'<td><input type="text" name="HIm"></td>' . 
+'<td><input type="text" name="HOtch"></td>' .
+'<td><input type="text" name="HPPok"></td>' .
+'<td><input type="text" name="HTPok"></td>' .
+'<td><input type="submit" name="addData" value="Создать запись"></td></tr>';
+echo '</tr></table></center>';
+echo '</form>';
+
+//--------------------------------------------------------------
+//Блок критериев поиска информации
+echo '<center><h2>Поиск</h2></center>';
+
+//--------------------------------------------------------------
+//Блок отображения результатов
+echo '<center><h2>Результат</h2></center>';
+echo '<center><table border=0 width=95%><tr style="vertical-align:top; height:30px;">';
+echo '<td><b>Номер счета</b></td><td><b>Фамилия</b></td><td><b>Имя</b></td><td><b>Отчество</b></td><td><b>Предыдущие показания</b></td><td><b>Текущие показания</b></td><td><b>Сумма</b></td><td><b>Действия</b></td></tr>';
+
+$query = "SELECT * FROM tariff";
+$result = mysql_query($query);
+$rows = mysql_num_rows($result);
+
+for ($j=0; $j<$rows; ++$j)
+	{
+	echo '<tr style="vertical-align:top; height:30px;"><td>' . mysql_result($result,$j,'Schn') . '</td>' . ' ';
+	echo '<td>' . mysql_result($result,$j,'Fam').'</td>';  
+	echo '<td>' . mysql_result($result,$j,'Im').'</td>';
+	echo '<td>' . mysql_result($result,$j,'Otch').'</td>';
+	echo '<td>' . mysql_result($result,$j,'PPok').'</td>';
+	echo '<td>' . mysql_result($result,$j,'TPok').'</td>';
+	echo '<td>' . (mysql_result($result,$j,'TPok')- mysql_result($result,$j,'PPok')) * $koef . ' руб.</td>';
+	echo '<td>' . '<form action="mainer.php" method="post"><input type="submit" name="delData" value="х" /><input type="hidden" name="Num" value="' . $j . 
+	'<form action="mainer.php" method="post"><input type="submit" name="editData" value="Ред" /><input type="hidden" name="Num1" value="' . $j . '">
+	</form></td>';
+	}
+
+
+if(isset($_POST['delData']))
+{
+  $Num=$_POST['Num'];
+  $DSchn=mysql_result($result,$Num,'Schn');
+  $dquery = "DELETE FROM `tariff` WHERE `Schn`='$DSchn'";
+  $q=mysql_query($dquery);
+}
+
+if (isset($_POST['addData']))
+{
+  $HSchn=$_POST['HSchn'];
+  $HFam=$_POST['HFam'];
+  $HIm=$_POST['HIm'];
+  $HOtch=$_POST['HOtch'];
+  $HPPok=$_POST['HPPok'];
+  $HTPok=$_POST['HTPok'];
+  $res=mysql_query("SELECT Schn FROM `tariff` WHERE Schn='$HSchn'");
+  $myrow = mysql_fetch_array($res);
+  if (empty($myrow['Schn']))
+  {
+    $query="INSERT INTO `tariff` (Schn, Fam, Im, Otch, PPok, TPok) VALUES 
+    ('$HSchn', '$HFam', '$HIm', '$HOtch', '$HPPok', '$HTPok')";
+     $q = mysql_query($query);
+  }
+
+
+}	
+
+	if(isset($_POST['editData']))
+	{
+	//  $Num1=$_POST['Num1'];
+	//  echo '<form action="mainer.php" method="post">';
+	//  echo '<td><input type="text" name="ESchn" value="' . mysql_result($result,$Num1,'Schn') . '"></td>' . 	
+	//  '<td><input type="text" name="EFam" value="' . mysql_result($result,$Num1,'Fam') . '"></td>' . 
+	//  '<td><input type="text" name="EIm" value="'. mysql_result($result,$Num1,'Im') . '"></td>' . 
+	//  '<td><input type="text" name="EOtch" value="' . mysql_result($result,$Num1,'Otch') . '"></td>' .
+	//  '<td><input type="text" name="EPPok" value="' . mysql_result($result,$Num1,'PPok') . '"></td>' .
+	//  '<td><input type="text" name="ETPok" value="' . mysql_result($result,$Num1,'TPok') . '"></td>' .
+	//  '<td><input type="submit" name="editData1" value="Отредактировать запись"></td><input type="hidden" name="Num2" value="' . $Num1 . '"></tr>';
+	//  echo '</tr></table></center>';
+	//  echo '</form>';
+echo '<script> showModalDialog("nw.php", "", "dialogWidth=350px, dialogHeight=200px") </script>';	
+
+	
+  
+
+}
+
+if(isset($_POST['editData1']))
+
+{
+  $Num1=$_POST['Num2'];
+  $ESchn=$_POST['ESchn'];
+  $EFam=$_POST['EFam'];
+  $EIm=$_POST['EIm'];
+  $EOtch=$_POST['EOtch'];
+  $EPPok=$_POST['EPPok'];
+  $ETPok=$_POST['ETPok'];
+  $qt=mysql_result($result,$Num1,'Schn');
+  $q="UPDATE `tariff` SET `Schn`= '$ESchn', `Fam`='$EFam', `Im`='$EIm', `Otch`='$EOtch', `PPok`='$EPPok', `TPok`='$ETPok' WHERE `Schn`='$qt'";
+  $query = mysql_query ($q);
+}
+
+mysql_close($db_server);
+
+echo '</tr></table></center>';
+echo '</body></html>';
+?>
